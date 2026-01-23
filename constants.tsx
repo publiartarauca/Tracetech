@@ -2,9 +2,9 @@
 import { UserRole, RecordStatus, Category, TraceRecord, User } from './types';
 
 export const MOCK_USERS: User[] = [
-  { id: '1', username: 'admin', name: 'Administrador Sistema', role: UserRole.ADMIN, password: '123' },
+  { id: '1', username: 'admin', name: 'Administrador', role: UserRole.ADMIN, password: '1234' },
   { id: '2', username: 'cliente01', name: 'Juan Pérez', role: UserRole.CLIENT, company: 'Construcciones S.A.', password: '123' },
-  { id: '3', username: 'op_tech', name: 'Soporte Técnico', role: UserRole.OPERATOR, company: 'TechFix Solutions', password: '123' },
+  { id: '3', username: 'sergio', name: 'Sergio Operador', role: UserRole.OPERATOR, company: 'X-Over Ops', password: '1234' },
 ];
 
 export const MOCK_RECORDS: TraceRecord[] = [

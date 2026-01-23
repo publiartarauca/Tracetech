@@ -1,7 +1,20 @@
 
-import firebase from "firebase/compat/app";
-import "firebase/compat/firestore";
-import "firebase/compat/storage";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { 
+  getFirestore, 
+  collection, 
+  query, 
+  orderBy, 
+  onSnapshot, 
+  doc, 
+  addDoc, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  writeBatch, 
+  getDocs 
+} from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { User } from "../types";
 
 const firebaseConfig = {
@@ -16,11 +29,12 @@ const firebaseConfig = {
 
 const isConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== "TU_API_KEY_AQUI";
 
-// Initialize Firebase (Compat)
-// Ensure we don't initialize twice in hot-reload environments
-const app = !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
-export const db = firebase.firestore(app);
-export const storage = firebase.storage(app);
+// Initialize Firebase (Modular Pattern)
+// Use getApps to prevent re-initialization in hot-reload
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 export const checkFirebaseConfig = () => isConfigured;
 
@@ -31,9 +45,10 @@ export const subscribeToCollection = (
   orderField: string = "date"
 ) => {
   try {
-    const query = db.collection(collectionName).orderBy(orderField, "desc");
+    const colRef = collection(db, collectionName);
+    const q = query(colRef, orderBy(orderField, "desc"));
     
-    return query.onSnapshot((snapshot) => {
+    return onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       callback(data);
     }, (error) => {
@@ -49,31 +64,24 @@ export const subscribeToCollection = (
 
 export const seedSystemData = async (records: any[], users: any[]) => {
   try {
-    const batch = db.batch();
+    const batch = writeBatch(db);
     
-    const recordsCol = db.collection("records");
-    const recordsSnap = await recordsCol.get();
-    
-    if (recordsSnap.empty) {
-      records.forEach((record) => {
-        const newDocRef = recordsCol.doc();
-        const { id, ...data } = record;
-        batch.set(newDocRef, { ...data, createdAt: new Date().toISOString() });
-      });
-    }
+    // Forzar actualización de USUARIOS (Sobreescribir para arreglar contraseñas)
+    users.forEach((user: any) => {
+      // Usamos el ID fijo definido en constants (1, 2, 3) para asegurar que se sobreescribe
+      const userRef = doc(db, "users", user.id); 
+      batch.set(userRef, user);
+    });
 
-    const usersCol = db.collection("users");
-    const usersSnap = await usersCol.get();
-    
-    if (usersSnap.empty) {
-      users.forEach((user) => {
-        const userRef = usersCol.doc(user.id);
-        batch.set(userRef, user);
-      });
-    }
+    // Registros: Solo insertar si no existen, para no duplicar si el ID es autogenerado,
+    // pero como en constants tienen ID manual (r1, r2), podemos hacer set también.
+    records.forEach((record: any) => {
+      const recordRef = doc(db, "records", record.id);
+      batch.set(recordRef, { ...record, createdAt: new Date().toISOString() }, { merge: true });
+    });
 
     await batch.commit();
-    return { success: true, message: "Datos sincronizados correctamente." };
+    return { success: true, message: "Usuarios y datos restaurados correctamente. Intenta ingresar ahora." };
   } catch (error: any) {
     console.error("Error durante el seeding:", error);
     return { 
@@ -88,10 +96,9 @@ export const seedSystemData = async (records: any[], users: any[]) => {
 // --- Storage Utilities ---
 export const uploadFile = async (file: File, path: string): Promise<string> => {
   try {
-    const storageRef = storage.ref();
-    const fileRef = storageRef.child(path);
-    await fileRef.put(file);
-    const downloadUrl = await fileRef.getDownloadURL();
+    const storageRef = ref(storage, path);
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadUrl = await getDownloadURL(snapshot.ref);
     return downloadUrl;
   } catch (error) {
     console.error("Error uploading file:", error);
@@ -101,32 +108,34 @@ export const uploadFile = async (file: File, path: string): Promise<string> => {
 
 // --- User Operations ---
 export const fbAddUser = async (user: Omit<User, 'id'>) => {
-  return await db.collection("users").add({
+  return await addDoc(collection(db, "users"), {
     ...user,
     createdAt: new Date().toISOString()
   });
 };
 
 export const fbUpdateUser = async (id: string, data: any) => {
-  return await db.collection("users").doc(id).set(data, { merge: true });
+  const userRef = doc(db, "users", id);
+  return await setDoc(userRef, data, { merge: true });
 };
 
 export const fbDeleteUser = async (id: string) => {
-  return await db.collection("users").doc(id).delete();
+  return await deleteDoc(doc(db, "users", id));
 };
 
 // --- Record Operations ---
 export const fbAddRecord = async (record: any) => {
-  return await db.collection("records").add({
+  return await addDoc(collection(db, "records"), {
     ...record,
     createdAt: new Date().toISOString()
   });
 };
 
 export const fbUpdateRecord = async (id: string, data: any) => {
-  return await db.collection("records").doc(id).update(data);
+  const recordRef = doc(db, "records", id);
+  return await updateDoc(recordRef, data);
 };
 
 export const fbDeleteRecord = async (id: string) => {
-  return await db.collection("records").doc(id).delete();
+  return await deleteDoc(doc(db, "records", id));
 };
