@@ -8,7 +8,7 @@ import TraceabilityList from './components/TraceabilityList';
 import AdminPanel from './components/AdminPanel';
 import PdfModal from './components/PdfModal';
 import ProfileSettings from './components/ProfileSettings';
-import { LogIn, ShieldAlert, KeyRound, Loader2, User as UserIcon, ArrowLeft, AlertTriangle, ExternalLink, WifiOff, Cloud } from 'lucide-react';
+import { LogIn, ShieldAlert, Loader2, User as UserIcon, ExternalLink, WifiOff, Cloud } from 'lucide-react';
 import { 
   db, 
   subscribeToCollection, 
@@ -179,27 +179,49 @@ const App: React.FC = () => {
 
   if (!appState.isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-blue-600 text-white mb-6 shadow-2xl shadow-blue-500/20">
-              <KeyRound size={40} />
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Background Gradients */}
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900 z-0 pointer-events-none"></div>
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
+
+        <div className="w-full max-w-md relative z-10">
+          <div className="text-center mb-10">
+            {/* Logo Container */}
+            <div className="bg-white p-8 rounded-[2rem] shadow-2xl mb-8 inline-block border-4 border-white/10 ring-4 ring-blue-500/20">
+               {/* Si deseas usar la imagen PNG/JPG subida, descomenta la siguiente línea y pon la URL correcta: */}
+               {/* <img src="/logo_xover.png" alt="X-OVER ENERGY" className="h-20 w-auto" /> */}
+               
+               {/* Versión CSS para visualización inmediata */}
+               <div className="flex flex-col items-center leading-none select-none">
+                  <div className="flex items-center">
+                    <span className="text-5xl md:text-6xl font-black text-slate-800 tracking-tighter italic transform -skew-x-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                      X-OVER
+                    </span>
+                  </div>
+                  <span className="text-3xl md:text-4xl font-bold text-orange-500 tracking-[0.2em] mt-1" style={{ fontFamily: 'Inter, sans-serif' }}>
+                    ENERGY
+                  </span>
+               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">TraceTech</h1>
-            <p className="text-slate-400 mt-2">Plataforma de Trazabilidad Técnica</p>
+            
+            <p className="text-blue-100 mt-2 text-xl font-medium italic tracking-wide">
+              "Soluciones que aseguran el futuro"
+            </p>
           </div>
-          <div className="bg-white rounded-3xl p-8 shadow-2xl">
+
+          <div className="bg-white rounded-3xl p-8 shadow-2xl border border-slate-200/50 backdrop-blur-sm">
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700 ml-1">Usuario</label>
-                <input type="text" required className="w-full px-4 py-3 border rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none" value={loginForm.username} onChange={e => setLoginForm({...loginForm, username: e.target.value})}/>
+                <input type="text" required className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none transition-all" value={loginForm.username} onChange={e => setLoginForm({...loginForm, username: e.target.value})}/>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700 ml-1">Contraseña</label>
-                <input type="password" required className="w-full px-4 py-3 border rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})}/>
+                <input type="password" required className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none transition-all" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})}/>
               </div>
-              {loginError && <div className="text-red-500 text-sm p-3 bg-red-50 rounded-xl border border-red-100">{loginError}</div>}
-              <button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2">
+              {loginError && <div className="text-red-500 text-sm p-3 bg-red-50 rounded-xl border border-red-100 flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>{loginError}</div>}
+              <button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95">
                 {isLoggingIn ? <Loader2 className="animate-spin" /> : <LogIn size={20} />}
                 {isLoggingIn ? 'Verificando...' : 'Iniciar Sesión'}
               </button>

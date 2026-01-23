@@ -35,11 +35,15 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, children, activeView, s
       {/* Sidebar Desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-slate-900 text-white">
         <div className="p-6 border-b border-slate-800">
-          <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
-            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-              <span className="text-white text-xs">TT</span>
+          <div className="flex items-center gap-2 font-bold text-xl tracking-tight select-none">
+            {/* Logo Simplificado para Sidebar */}
+            <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center overflow-hidden">
+              <span className="text-white text-xs font-black italic transform -skew-x-12">X</span>
             </div>
-            TraceTech
+            <div className="flex flex-col leading-none">
+               <span className="text-white font-black italic text-sm tracking-tighter">X-OVER</span>
+               <span className="text-orange-500 font-bold text-[10px] tracking-widest">ENERGY</span>
+            </div>
           </div>
         </div>
 
@@ -85,10 +89,10 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, children, activeView, s
       {/* Mobile Top Nav */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-slate-900 text-white z-50 flex items-center justify-between p-4 h-16">
         <div className="flex items-center gap-2 font-bold text-lg">
-          <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
-            <span className="text-white text-[10px]">TT</span>
-          </div>
-          TraceTech
+           <div className="w-6 h-6 bg-orange-500 rounded flex items-center justify-center">
+             <span className="text-white text-[10px] font-black italic">X</span>
+           </div>
+           <span className="font-black italic">X-OVER</span>
         </div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
