@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, TraceRecord, AppState, UserRole, Category, RecordStatus } from './types';
+import { User, TraceRecord, AppState, UserRole, Category, RecordStatus, SystemEntity } from './types';
 import { MOCK_USERS, MOCK_RECORDS } from './constants';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
@@ -18,7 +18,10 @@ import {
   fbUpdateUser,
   fbAddUser,
   fbDeleteUser,
-  seedSystemData
+  seedSystemData,
+  fbAddSystemEntity,
+  fbUpdateSystemEntity,
+  fbDeleteSystemEntity
 } from './services/firebaseService';
 
 const App: React.FC = () => {
@@ -28,6 +31,8 @@ const App: React.FC = () => {
     users: [],
     categories: Object.values(Category),
     statuses: Object.values(RecordStatus),
+    systemCategories: [],
+    systemStatuses: [],
     isAuthenticated: false
   });
 
@@ -99,9 +104,39 @@ const App: React.FC = () => {
       'name'
     );
 
+    // Subscribe to Categories
+    const unsubCategories = subscribeToCollection('categories',
+      (cats: SystemEntity[]) => {
+        const activeCats = cats.filter(c => c.isActive).map(c => c.name);
+        setAppState(prev => ({ 
+          ...prev, 
+          systemCategories: cats,
+          categories: activeCats.length > 0 ? activeCats : Object.values(Category)
+        }));
+      },
+      handleError,
+      'createdAt'
+    );
+
+    // Subscribe to Statuses
+    const unsubStatuses = subscribeToCollection('statuses',
+      (stats: SystemEntity[]) => {
+        const activeStats = stats.filter(s => s.isActive).map(s => s.name);
+        setAppState(prev => ({ 
+          ...prev, 
+          systemStatuses: stats,
+          statuses: activeStats.length > 0 ? activeStats : Object.values(RecordStatus)
+        }));
+      },
+      handleError,
+      'createdAt'
+    );
+
     return () => {
       unsubRecords();
       unsubUsers();
+      unsubCategories();
+      unsubStatuses();
     };
   }, [useLocalMode]);
 
@@ -155,10 +190,9 @@ const App: React.FC = () => {
       return;
     }
 
-    setIsLoggingIn(true); // Reutilizamos el estado de carga
+    setIsLoggingIn(true);
     
     try {
-      // Verificar si el usuario ya existe (simple check en frontend con la lista actual)
       const exists = appState.users.some(u => u.username === regForm.username);
       if (exists) {
         setRegError('El nombre de usuario ya está en uso.');
@@ -253,6 +287,22 @@ const App: React.FC = () => {
       setAppState(prev => ({ ...prev, currentUser: updatedUser }));
       localStorage.setItem('trace_user', JSON.stringify(updatedUser));
     } catch (e) { console.error(e); }
+  };
+
+  // Handlers for System Entities
+  const handleSystemEntity = {
+    add: async (type: 'categories' | 'statuses', data: any) => {
+      if (useLocalMode) return;
+      await fbAddSystemEntity(type, data);
+    },
+    update: async (type: 'categories' | 'statuses', id: string, data: any) => {
+      if (useLocalMode) return;
+      await fbUpdateSystemEntity(type, id, data);
+    },
+    delete: async (type: 'categories' | 'statuses', id: string) => {
+      if (useLocalMode) return;
+      await fbDeleteSystemEntity(type, id);
+    }
   };
 
   if (!appState.isAuthenticated) {
@@ -412,6 +462,7 @@ const App: React.FC = () => {
           records={visibleRecords} 
           categories={appState.categories}
           statuses={appState.statuses}
+          currentUser={appState.currentUser!}
           onViewPdf={(url, title) => setPdfModal({ isOpen: true, url, title })}
         />
       )}
@@ -422,16 +473,20 @@ const App: React.FC = () => {
           users={usersToDisplay}
           categories={appState.categories}
           statuses={appState.statuses}
+          systemCategories={appState.systemCategories}
+          systemStatuses={appState.systemStatuses}
           onAdd={handleAddRecord} 
           onUpdate={handleUpdateRecord}
           onDelete={handleDeleteRecord}
           onAddUser={handleAddUser}
           onUpdateUser={() => {}}
           onDeleteUser={handleDeleteUser}
-          onAddCategory={() => {}}
-          onDeleteCategory={() => {}}
-          onAddStatus={() => {}}
-          onDeleteStatus={() => {}}
+          onAddCategory={(data) => handleSystemEntity.add('categories', data)}
+          onUpdateCategory={(id, data) => handleSystemEntity.update('categories', id, data)}
+          onDeleteCategory={(id) => handleSystemEntity.delete('categories', id)}
+          onAddStatus={(data) => handleSystemEntity.add('statuses', data)}
+          onUpdateStatus={(id, data) => handleSystemEntity.update('statuses', id, data)}
+          onDeleteStatus={(id) => handleSystemEntity.delete('statuses', id)}
         />
       )}
 

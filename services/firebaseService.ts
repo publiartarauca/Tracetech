@@ -12,10 +12,11 @@ import {
   updateDoc, 
   deleteDoc, 
   writeBatch, 
-  getDocs 
+  getDocs,
+  where
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { User } from "../types";
+import { User, SystemEntity, Comment } from "../types";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDmRdYQ9xTwo2BEwAWa0Q8wfB-AF-sUcUk",
@@ -30,7 +31,6 @@ const firebaseConfig = {
 const isConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== "TU_API_KEY_AQUI";
 
 // Initialize Firebase (Modular Pattern)
-// Use getApps to prevent re-initialization in hot-reload
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 export const db = getFirestore(app);
@@ -66,15 +66,11 @@ export const seedSystemData = async (records: any[], users: any[]) => {
   try {
     const batch = writeBatch(db);
     
-    // Forzar actualización de USUARIOS (Sobreescribir para arreglar contraseñas)
     users.forEach((user: any) => {
-      // Usamos el ID fijo definido en constants (1, 2, 3) para asegurar que se sobreescribe
       const userRef = doc(db, "users", user.id); 
       batch.set(userRef, user);
     });
 
-    // Registros: Solo insertar si no existen, para no duplicar si el ID es autogenerado,
-    // pero como en constants tienen ID manual (r1, r2), podemos hacer set también.
     records.forEach((record: any) => {
       const recordRef = doc(db, "records", record.id);
       batch.set(recordRef, { ...record, createdAt: new Date().toISOString() }, { merge: true });
@@ -104,6 +100,27 @@ export const uploadFile = async (file: File, path: string): Promise<string> => {
     console.error("Error uploading file:", error);
     throw error;
   }
+};
+
+// --- System Entities (Categories & Statuses) ---
+export const fbAddSystemEntity = async (collectionName: 'categories' | 'statuses', data: Omit<SystemEntity, 'id'>) => {
+  return await addDoc(collection(db, collectionName), {
+    ...data,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+};
+
+export const fbUpdateSystemEntity = async (collectionName: 'categories' | 'statuses', id: string, data: Partial<SystemEntity>) => {
+  const ref = doc(db, collectionName, id);
+  return await updateDoc(ref, {
+    ...data,
+    updatedAt: new Date().toISOString()
+  });
+};
+
+export const fbDeleteSystemEntity = async (collectionName: 'categories' | 'statuses', id: string) => {
+  return await deleteDoc(doc(db, collectionName, id));
 };
 
 // --- User Operations ---
@@ -138,4 +155,24 @@ export const fbUpdateRecord = async (id: string, data: any) => {
 
 export const fbDeleteRecord = async (id: string) => {
   return await deleteDoc(doc(db, "records", id));
+};
+
+// --- Comment Operations ---
+export const fbAddComment = async (comment: Omit<Comment, 'id'>) => {
+  return await addDoc(collection(db, "comments"), {
+    ...comment,
+    createdAt: new Date().toISOString()
+  });
+};
+
+export const fbDeleteComment = async (id: string) => {
+  return await deleteDoc(doc(db, "comments", id));
+};
+
+export const subscribeToComments = (recordId: string, callback: (comments: Comment[]) => void) => {
+  const q = query(collection(db, "comments"), where("recordId", "==", recordId), orderBy("createdAt", "asc"));
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
+    callback(data);
+  });
 };

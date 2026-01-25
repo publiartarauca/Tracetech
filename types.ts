@@ -28,6 +28,15 @@ export interface User {
   company?: string;
 }
 
+export interface Comment {
+  id: string;
+  recordId: string;
+  userId: string;
+  userName: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface TraceRecord {
   id: string;
   code: string;
@@ -42,11 +51,24 @@ export interface TraceRecord {
   technicalDetails?: string;
 }
 
+export interface SystemEntity {
+  id: string;
+  name: string;
+  description: string;
+  isActive: boolean;
+  type: 'CATEGORY' | 'STATUS';
+  icon?: string; // Icono sugerido por IA o asignado manualmente
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AppState {
   currentUser: User | null;
   records: TraceRecord[];
   users: User[];
-  categories: string[];
-  statuses: string[];
+  categories: string[]; // Nombres para dropdowns
+  statuses: string[]; // Nombres para dropdowns
+  systemCategories: SystemEntity[]; // Objetos completos para admin
+  systemStatuses: SystemEntity[]; // Objetos completos para admin
   isAuthenticated: boolean;
 }

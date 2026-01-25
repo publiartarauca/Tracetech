@@ -28,3 +28,44 @@ export const generateTechnicalSummary = async (description: string, category: st
     return "Error al generar insights técnicos.";
   }
 };
+
+/**
+ * Selects the best icon from a provided list based on the category name and description.
+ * @param name Category name
+ * @param description Category description
+ * @param availableIcons List of available icon names
+ */
+export const suggestCategoryIcon = async (name: string, description: string, availableIcons: string[]): Promise<string> => {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+    const prompt = `
+      Category Name: ${name}
+      Category Description: ${description}
+      Available Icons: ${availableIcons.join(', ')}
+      
+      Task: Select the single icon name from the list above that best visually represents this category. 
+      Return ONLY the icon name string. Nothing else.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        temperature: 0.1, // Low temperature for deterministic selection
+      }
+    });
+
+    const suggestedIcon = response.text?.trim() || '';
+    
+    // Fallback validation: ensure the returned string is actually in our list
+    if (availableIcons.includes(suggestedIcon)) {
+      return suggestedIcon;
+    }
+    
+    return 'Tag'; // Default fallback
+  } catch (error) {
+    console.error("Error suggesting icon:", error);
+    return 'Tag'; // Default fallback
+  }
+};
