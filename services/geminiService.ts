@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 
 /**
@@ -8,10 +7,9 @@ import { GoogleGenAI } from "@google/genai";
  */
 export const generateTechnicalSummary = async (description: string, category: string) => {
   try {
-    // Instantiate the GoogleGenAI client right before the API call to ensure it uses the latest process.env.API_KEY.
+    // Instantiate the GoogleGenAI client using the API key injected by Vite via define.
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    // Use ai.models.generateContent with model name, prompt in contents, and system instructions in config.
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Actividad técnica:
@@ -21,7 +19,6 @@ export const generateTechnicalSummary = async (description: string, category: st
         systemInstruction: "Eres un ingeniero experto en trazabilidad técnica. Tu tarea es generar un resumen ejecutivo extremadamente breve (máximo 3 líneas) de la actividad proporcionada. El tono debe ser profesional y altamente técnico.",
       }
     });
-    // Use the .text property directly as it is a getter, not a method.
     return response.text || "No se pudo generar el resumen técnico.";
   } catch (error) {
     console.error("Error calling Gemini API:", error);
@@ -58,7 +55,7 @@ export const suggestCategoryIcon = async (name: string, description: string, ava
 
     const suggestedIcon = response.text?.trim() || '';
     
-    // Fallback validation: ensure the returned string is actually in our list
+    // Fallback validation
     if (availableIcons.includes(suggestedIcon)) {
       return suggestedIcon;
     }

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { TraceRecord, User, Comment, UserRole } from '../types';
 import { Search, Calendar, FileText, Sparkles, Youtube, Image as ImageIcon, ExternalLink, MessageSquare, Send, Loader2, Trash2 } from 'lucide-react';
@@ -13,7 +12,6 @@ interface TraceabilityListProps {
   onViewPdf: (url: string, title: string) => void;
 }
 
-// Sub-componente para manejar la lógica individual de cada tarjeta (Comentarios y Resumen IA)
 const TraceRecordItem: React.FC<{ 
   record: TraceRecord; 
   currentUser: User;
@@ -26,7 +24,6 @@ const TraceRecordItem: React.FC<{
   const [newComment, setNewComment] = useState('');
   const [isSendingComment, setIsSendingComment] = useState(false);
 
-  // Suscripción a comentarios
   useEffect(() => {
     let unsubscribe = () => {};
     if (showComments) {
@@ -77,15 +74,15 @@ const TraceRecordItem: React.FC<{
   };
 
   const getYoutubeId = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    if (!url) return null;
+    // Fix: Use RegExp constructor to avoid parser issues with forward slashes in regex literals
+    const regExp = new RegExp("^.*(youtu.be/|v/|u/\\w/|embed/|watch\\?v=|&v=)([^#&?]*).*");
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
   };
 
   return (
     <div className="group bg-white border border-slate-200 rounded-3xl overflow-hidden hover:shadow-xl transition-all flex flex-col lg:flex-row">
-      
-      {/* Contenido Técnico */}
       <div className="flex-1 p-6 md:p-8 flex flex-col gap-4">
         <div className="flex items-center flex-wrap gap-2">
           <span className="mono text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full">{record.code}</span>
@@ -138,7 +135,6 @@ const TraceRecordItem: React.FC<{
           </button>
         </div>
 
-        {/* Sección de Comentarios */}
         {showComments && (
           <div className="mt-2 pt-4 border-t border-slate-100 animate-in slide-in-from-top-2">
             <div className="space-y-4 mb-4 max-h-60 overflow-y-auto pr-2">
@@ -150,13 +146,10 @@ const TraceRecordItem: React.FC<{
                     <div className="flex items-end gap-2 max-w-[90%]">
                       <div className={`rounded-2xl p-3 text-sm relative group/comment ${comment.userId === currentUser.id ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 text-slate-700 rounded-tl-none'}`}>
                         <p>{comment.text}</p>
-                        
-                        {/* Botón de borrar para Admin o Propietario */}
                         {(currentUser.role === UserRole.ADMIN || currentUser.id === comment.userId) && (
                           <button 
                             onClick={() => handleDeleteComment(comment.id)}
                             className={`absolute -right-6 top-1/2 -translate-y-1/2 opacity-0 group-hover/comment:opacity-100 transition-opacity p-1 hover:text-red-500 ${comment.userId === currentUser.id ? 'text-slate-300' : 'text-slate-400'}`}
-                            title="Eliminar comentario"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -192,13 +185,11 @@ const TraceRecordItem: React.FC<{
         )}
       </div>
 
-      {/* Multimedia Sidebar/Preview */}
       <div className="w-full lg:w-80 bg-slate-50 border-l border-slate-100 p-6 flex flex-col gap-4">
         <h4 className="text-[10px] font-bold uppercase text-slate-400 tracking-widest flex items-center gap-2">
           Respaldo Multimedia
         </h4>
 
-        {/* Imagen Visualización */}
         {record.imageUrl ? (
           <div className="group/img relative rounded-2xl overflow-hidden aspect-video shadow-md border-4 border-white">
             <img src={record.imageUrl} className="w-full h-full object-cover transition-transform group-hover/img:scale-110" alt="Respaldo técnico" />
@@ -215,7 +206,6 @@ const TraceRecordItem: React.FC<{
           </div>
         )}
 
-        {/* Video Visualización */}
         {record.videoUrl && getYoutubeId(record.videoUrl) ? (
           <div className="rounded-2xl overflow-hidden shadow-md aspect-video border-4 border-white bg-black">
             <iframe 
@@ -263,7 +253,6 @@ const TraceabilityList: React.FC<TraceabilityListProps> = ({ records, categories
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Filtros */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Historial Técnico</h1>
